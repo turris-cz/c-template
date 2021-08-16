@@ -1,0 +1,181 @@
+stages:
+  - docker
+  - build
+  - test
+  - coverage
+  - release
+
+## Docker stage ##################################################################
+.docker:
+  stage: docker
+  image: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/docker
+  services:
+    - $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/docker:dind
+  tags:
+    - dind
+    - privileged
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker pull $TAG || true
+    - docker build --pull --cache-from $TAG --tag $TAG --file .gitlab-ci/$DOCKERFILE .gitlab-ci
+    - docker push $TAG
+
+docker:debian:
+  extends: .docker
+  variables:
+    TAG: "$CI_REGISTRY_IMAGE:debian"
+    DOCKERFILE: "Dockerfile-debian"
+
+docker:alpine:
+  extends: .docker
+  variables:
+    TAG: "$CI_REGISTRY_IMAGE:alpine"
+    DOCKERFILE: "Dockerfile-alpine"
+
+## Build stage ###################################################################
+.build:
+  stage: build
+  script:
+    - ./bootstrap
+    - ./configure
+    - make
+  artifacts:
+    when: on_failure
+    expire_in: 1 week
+    paths:
+    - config.log
+
+build:debian:
+  extends: .build
+  image: "$CI_REGISTRY_IMAGE:debian"
+  needs: ["docker:debian"]
+
+build:alpine:
+  extends: .build
+  image: "$CI_REGISTRY_IMAGE:alpine"
+  needs: ["docker:alpine"]
+
+dist:
+  stage: build
+  image: "$CI_REGISTRY_IMAGE:debian"
+  needs: ["docker:debian"]
+  script:
+    - ./bootstrap
+    - ./configure
+    - make dist
+  artifacts:
+    expire_in: 1 month
+    paths:
+      - $NAME-*.tar.gz
+      - $NAME-*.tar.xz
+      - $NAME-*.zip
+
+## Test stage ####################################################################
+.test:
+  stage: test
+  before_script:
+      - ./bootstrap
+      - ./configure --enable-tests --enable-valgrind
+  artifacts:
+    when: on_failure
+    expire_in: 1 week
+    paths:
+    - 'test-suite*.log'
+    - 'tests/*/*.log'
+    - 'tests/*/*.trs'
+
+.check:
+  extends: .test
+  script:
+    - make check
+
+.distcheck:
+  extends: .test
+  script:
+    - make distcheck
+
+.valgrind:
+  extends: .test
+  script:
+    - make check-valgrind
+
+check:debian:
+  extends: .check
+  image: "$CI_REGISTRY_IMAGE:debian"
+  needs: ["build:debian"]
+
+check:alpine:
+  extends: .check
+  image: "$CI_REGISTRY_IMAGE:alpine"
+  needs: ["build:alpine"]
+
+distcheck:debian:
+  extends: .distcheck
+  image: "$CI_REGISTRY_IMAGE:debian"
+  needs: ["build:debian"]
+
+distcheck:alpine:
+  extends: .distcheck
+  image: "$CI_REGISTRY_IMAGE:alpine"
+  needs: ["build:alpine"]
+
+valgrind:debian:
+  extends: .valgrind
+  image: "$CI_REGISTRY_IMAGE:debian"
+  needs: ["build:debian"]
+
+valgrind:alpine:
+  extends: .valgrind
+  image: "$CI_REGISTRY_IMAGE:alpine"
+  needs: ["build:alpine"]
+  # Helgrind detects some issue in musl thus we skip it on musl
+  script:
+    - make check-valgrind-memcheck check-valgrind-drd
+
+lint:c:
+  stage: test
+  allow_failure: true
+  image: "$CI_REGISTRY_IMAGE:debian"
+  needs: ["docker:debian"]
+  before_script:
+      - ./bootstrap
+      - ./configure --enable-linters
+  script:
+    - make lint
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+## Code Coverage stage ###########################################################
+coverage:c:
+  stage: coverage
+  needs: ["check:debian"]
+  image: "$CI_REGISTRY_IMAGE:debian"
+  script:
+    - ./bootstrap
+    - ./configure --enable-tests --enable-code-coverage
+    - make check-code-coverage V=1
+    - "mv *-coverage coverage"
+  coverage: '/lines\.\.\.\.\.\.: (\d+.\d+%)/'
+  artifacts:
+    expire_in: 1 month
+    expose_as: 'Code Coverage'
+    paths:
+    - 'coverage/'
+
+## Release creation ##############################################################
+release:
+  stage: release
+  image: "registry.gitlab.com/gitlab-org/release-cli:latest"
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  needs:
+    - job: dist
+      artifacts: true
+  before_script:
+    - apk update
+    - apk add bash curl
+  script:
+    - .gitlab-ci/release.sh
