@@ -1,0 +1,100 @@
+= C project template
+CZ.NIC z.s.p.o. <packaging@turris.cz>
+v1.0, 2021-07-09
+:icons:
+
+This is library for C for logging. It is able to output to any stream (file,
+socket, stdout, ...) as well as to syslog. It optionally outputs colors and source
+code line and more.
+
+It is loosely designed close to Python logging but is intended to be versatile in
+C and primarily easy to use no matter if you are writing library or application.
+
+This library tries to introduce minimum amount of additional dependencies to be as
+simple to include as possible.
+
+
+== Dependencies
+
+* https://gitlab.nic.cz/turris/logc[logc]
+* http://www.hyperrealm.com/libconfig/libconfig.html[libconfig]
+* On non-glibc http://www.lysator.liu.se/~nisse/misc[argp-standalone]
+
+For bootstrap (not release tarballs):
+
+* autotools
+* autoconf-archive
+* https://www.gnu.org/software/gperf[gperf]
+
+For tests:
+
+* https://libcheck.github.io/check[check]
+* Optionally http://www.valgrind.org[valgrind]
+* For coverage http://ltp.sourceforge.net/coverage/lcov.php[lcov]
+* For linting:
+  * https://github.com/danmar/cppcheck[cppcheck]
+  * https://dwheeler.com/flawfinder/[flawfinder]
+* For formating https://clang.llvm.org/docs/ClangFormat.html[clang-format]
+
+
+== Compilation
+
+To compile this project you have to run:
+
+----
+ ./configure
+ make
+----
+
+Subsequent installation can be done with `make install`.
+
+When you do not use distribution archive then you have to run initially
+`./bootstrap`.
+
+
+== Running tests
+
+This project contains basic tests in directory tests. To run all tests they have
+to be enabled using configure option `--enable-tests`. Then all tests can be run:
+
+----
+ make check
+----
+
+You can also run tests with Valgrind:
+
+----
+ make check-valgrind
+----
+
+To run checks with just one specific Valgrind tool you can append its name to
+target name. For example to run only Memcheck you can use `make
+check-valgrind-memcheck`.
+
+There is also possibility to generate code coverage for test cases. To do so you
+can run:
+
+----
+ make check-code-coverage
+----
+
+== Linting the code
+
+The linting has to be enabled using configure option `--enable-linters`. To lint
+the source code you can then run:
+
+----
+ make lint
+----
+
+To run only specific liter you can append dash with its name. For example to run
+only cppcheck you can use `make lint-cppcheck`.
+
+== Formating the code
+
+The formatter has to be enabled first using configure option `--enable-formatter`.
+To format source code you can then use:
+
+----
+ make format
+----

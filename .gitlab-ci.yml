@@ -1,0 +1,36 @@
+stages:
+  - test
+  - build
+
+.docker:
+  stage: build
+  image: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/docker
+  services:
+    - $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/docker:dind
+  tags:
+    - dind
+    - privileged
+  variables:
+    TAG: "$CI_REGISTRY_IMAGE/baseimg:$NAME"
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker pull $TAG || true
+    - docker build --pull --cache-from $TAG --target base --tag $TAG-base --file Dockerfile-$NAME .
+    - docker push $TAG-base
+    - docker build --cache-from $TAG --tag $TAG --file Dockerfile-$NAME .
+    - docker push $TAG
+
+docker:debian:
+  extends: .docker
+  variables:
+    NAME: "debian"
+
+docker:alpine:
+  extends: .docker
+  variables:
+    NAME: "alpine"
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml

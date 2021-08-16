@@ -1,0 +1,60 @@
+# Wee need unstable for now because of check version
+FROM debian:unstable as base
+
+ENV HOME /root
+CMD [ "bash" ]
+
+RUN apt-get update && apt-get -y upgrade
+
+# Compiler and toher related tools
+RUN apt-get -y install --no-install-recommends \
+  autoconf autoconf-archive automake libtool \
+  make pkg-config gcc gperf
+
+# Test tools
+RUN apt-get -y install --no-install-recommends \
+  check \
+  bats \
+  valgrind
+# Linters
+RUN apt-get -y install --no-install-recommends \
+  cppcheck flawfinder
+# Code coverage
+RUN apt-get -y install --no-install-recommends \
+  lcov
+
+# Libraries
+RUN apt-get -y install --no-install-recommends \
+  libconfig-dev
+
+# Binaries required to build distribution archives
+RUN apt-get -y install --no-install-recommends \
+  zip xz-utils
+
+RUN apt-get clean
+
+
+FROM base as logc
+
+RUN apt-get update
+
+# Compile logc
+RUN apt-get -y install --no-install-recommends \
+  git ca-certificates
+RUN \
+  git clone --branch "v0.3.0" "https://gitlab.nic.cz/turris/logc.git" && \
+  cd logc && \
+  ./bootstrap && ./configure --disable-tests --disable-linters --prefix=/usr && \
+  make install && \
+  cd .. && \
+  rm -rf logc
+RUN \
+  git clone --branch "v0.1.0" "https://gitlab.nic.cz/turris/logc-libs.git" && \
+  cd logc-libs && \
+  ./bootstrap && ./configure --prefix=/usr && make install && \
+  cd .. && \
+  rm -rf logc-libs
+
+RUN apt-get clean
+
+# vim: ft=dockerfile

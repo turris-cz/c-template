@@ -1,0 +1,51 @@
+FROM alpine:latest as base
+
+ENV HOME /root
+CMD [ "bash" ]
+
+RUN apk upgrade -a
+
+# GNU tools (alpine is based on busybox and musl instead of GNU)
+RUN apk add \
+  binutils coreutils file musl-dev musl-obstack-dev musl-nscd-dev argp-standalone
+
+# Compiler and other related tools
+RUN apk add \
+  autoconf autoconf-archive automake libtool \
+  make pkgconf gcc gperf
+
+# Test tools
+RUN apk add \
+  check-dev \
+  bats \
+  valgrind
+
+# Libraries
+RUN apk add \
+  libconfig-dev
+
+# Binaries required to build distribution archives
+RUN apk add \
+  gzip zip xz
+
+
+FROM base as logc
+
+# Compile logc
+RUN apk add \
+  git ca-certificates
+RUN \
+  git clone --branch "v0.3.0" "https://gitlab.nic.cz/turris/logc.git" && \
+  cd logc && \
+  ./bootstrap && ./configure --prefix=/usr && make install && \
+  cd .. && \
+  rm -rf logc
+RUN \
+  git clone --branch "v0.1.0" "https://gitlab.nic.cz/turris/logc-libs.git" && \
+  cd logc-libs && \
+  ./bootstrap && ./configure --prefix=/usr && make install && \
+  cd .. && \
+  rm -rf logc-libs
+
+
+# vim: ft=dockerfile
