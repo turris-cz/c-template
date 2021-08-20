@@ -100,6 +100,23 @@ dist:
   script:
     - make check-valgrind
 
+.outoftree:
+  stage: test
+  script:
+      - ./bootstrap
+      - mkdir build
+      - cd build
+      - ../configure --enable-tests
+      - make check
+  artifacts:
+    when: on_failure
+    expire_in: 1 week
+    paths:
+    - 'build/config.log'
+    - 'build/test-suite*.log'
+    - 'build/tests/*/*.log'
+    - 'build/tests/*/*.trs'
+
 check:debian:
   extends: .check
   image: "$CI_REGISTRY_IMAGE:debian"
@@ -132,6 +149,16 @@ valgrind:alpine:
   # Helgrind detects some issue in musl thus we skip it on musl
   script:
     - make check-valgrind-memcheck check-valgrind-drd
+
+outoftree:debian:
+  extends: .outoftree
+  image: "$CI_REGISTRY_IMAGE:debian"
+  needs: ["build:debian"]
+
+outoftree:alpine:
+  extends: .outoftree
+  image: "$CI_REGISTRY_IMAGE:alpine"
+  needs: ["build:alpine"]
 
 lint:c:
   stage: test
