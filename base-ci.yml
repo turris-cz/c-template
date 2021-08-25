@@ -76,7 +76,7 @@ dist:
   stage: test
   before_script:
       - ./bootstrap
-      - ./configure --enable-tests --enable-valgrind
+      - ./configure --enable-tests --enable-valgrind $CONFIGURE_CHECK
   artifacts:
     when: on_failure
     expire_in: 1 week
@@ -106,7 +106,7 @@ dist:
       - ./bootstrap
       - mkdir build
       - cd build
-      - ../configure --enable-tests
+      - ../configure --enable-tests $CONFIGURE_CHECK
       - make check
   artifacts:
     when: on_failure
@@ -167,7 +167,7 @@ lint:c:
   needs: ["docker:debian"]
   before_script:
       - ./bootstrap
-      - ./configure --enable-linters
+      - ./configure --enable-linters $CONFIGURE_LINT
   script:
     - make lint
 
@@ -182,7 +182,7 @@ coverage:c:
   image: "$CI_REGISTRY_IMAGE:debian"
   script:
     - ./bootstrap
-    - ./configure --enable-tests --enable-code-coverage
+    - ./configure --enable-tests --enable-code-coverage $CONFIGURE_CHECK
     - make check-code-coverage V=1
     - "mv *-coverage coverage"
   coverage: '/lines\.\.\.\.\.\.: (\d+.\d+%)/'
