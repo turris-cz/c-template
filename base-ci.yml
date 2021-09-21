@@ -37,14 +37,13 @@ docker:alpine:
 .build:
   stage: build
   script:
-    - ./bootstrap
-    - ./configure
-    - make
+    - meson setup build
+    - meson compile -C build
   artifacts:
     when: on_failure
     expire_in: 1 week
     paths:
-    - config.log
+    - 'build/meson-logs/'
 
 build:debian:
   extends: .build
@@ -61,9 +60,9 @@ dist:
   image: "$CI_REGISTRY_IMAGE:debian"
   needs: ["docker:debian"]
   script:
-    - ./bootstrap
-    - ./configure
-    - make dist
+    - meson setup build
+    - meson dist -C build --formats xztar,gztar,zip
+    - mv build/meson-dist/* ./
   artifacts:
     expire_in: 1 month
     paths:
@@ -75,122 +74,80 @@ dist:
 .test:
   stage: test
   before_script:
-      - ./bootstrap
-      - ./configure --enable-tests --enable-valgrind $CONFIGURE_CHECK
+    - meson setup build
+  script:
+    - meson test -C build
   artifacts:
     when: on_failure
     expire_in: 1 week
     paths:
-    - 'test-suite*.log'
-    - 'tests/*/*.log'
-    - 'tests/*/*.trs'
+    - 'build/meson-logs/'
 
-.check:
+test:debian:
   extends: .test
-  script:
-    - make check
-
-.distcheck:
-  extends: .test
-  script:
-    - make distcheck
-
-.valgrind:
-  extends: .test
-  script:
-    - make check-valgrind
-
-.outoftree:
-  stage: test
-  script:
-      - ./bootstrap
-      - mkdir build
-      - cd build
-      - ../configure --enable-tests $CONFIGURE_CHECK
-      - make check
-  artifacts:
-    when: on_failure
-    expire_in: 1 week
-    paths:
-    - 'build/config.log'
-    - 'build/test-suite*.log'
-    - 'build/tests/*/*.log'
-    - 'build/tests/*/*.trs'
-
-check:debian:
-  extends: .check
   image: "$CI_REGISTRY_IMAGE:debian"
   needs: ["build:debian"]
 
-check:alpine:
-  extends: .check
+test:alpine:
+  extends: .test
   image: "$CI_REGISTRY_IMAGE:alpine"
   needs: ["build:alpine"]
 
-distcheck:debian:
-  extends: .distcheck
+.valgrind:memcheck:
+  extends: .test
+  variables:
+    VALGRIND: memcheck
+
+valgrind:memcheck:debian:
+  extends: .valgrind:memcheck
   image: "$CI_REGISTRY_IMAGE:debian"
   needs: ["build:debian"]
 
-distcheck:alpine:
-  extends: .distcheck
+valgrind:memcheck:alpine:
+  extends: .valgrind:memcheck
   image: "$CI_REGISTRY_IMAGE:alpine"
   needs: ["build:alpine"]
 
-valgrind:debian:
-  extends: .valgrind
-  image: "$CI_REGISTRY_IMAGE:debian"
-  needs: ["build:debian"]
-
-valgrind:alpine:
-  extends: .valgrind
-  image: "$CI_REGISTRY_IMAGE:alpine"
-  needs: ["build:alpine"]
   # Helgrind detects some issue in musl thus we skip it on musl
-  script:
-    - make check-valgrind-memcheck check-valgrind-drd
 
-outoftree:debian:
-  extends: .outoftree
-  image: "$CI_REGISTRY_IMAGE:debian"
-  needs: ["build:debian"]
-
-outoftree:alpine:
-  extends: .outoftree
-  image: "$CI_REGISTRY_IMAGE:alpine"
-  needs: ["build:alpine"]
-
-lint:c:
+.linter:
   stage: test
   allow_failure: true
   image: "$CI_REGISTRY_IMAGE:debian"
   needs: ["docker:debian"]
   before_script:
-      - ./bootstrap
-      - ./configure --enable-linters $CONFIGURE_LINT
+    - meson setup build
+
+cppcheck:
+  extends: .linter
   script:
-    - make lint
+    - meson compile -C build cppcheck
+
+flawfinder:
+  extends: .linter
+  script:
+    - meson compile -C build flawfinder
 
 include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
 
 ## Code Coverage stage ###########################################################
-coverage:c:
+coverage:
   stage: coverage
-  needs: ["check:debian"]
+  needs: ["test:debian"]
   image: "$CI_REGISTRY_IMAGE:debian"
   script:
-    - ./bootstrap
-    - ./configure --enable-tests --enable-code-coverage $CONFIGURE_CHECK
-    - make check-code-coverage V=1
-    - "mv *-coverage coverage"
+    - meson setup -Db_coverage=true build
+    - meson test -C build
+    - ninja -C build coverage-html
+    - mv build/meson-logs/coveragereport ./
   coverage: '/lines\.\.\.\.\.\.: (\d+.\d+%)/'
   artifacts:
     expire_in: 1 month
     expose_as: 'Code Coverage'
     paths:
-    - 'coverage/'
+    - 'coveragereport/'
 
 ## Release creation ##############################################################
 release:

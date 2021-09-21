@@ -11,8 +11,9 @@ RUN apk add \
 
 # Compiler and other related tools
 RUN apk add \
-  autoconf autoconf-archive automake libtool \
-  make pkgconf gcc gperf
+  make autoconf autoconf-archive automake libtool \
+  meson \
+  pkgconf gcc gperf
 
 # Test tools
 RUN apk add \

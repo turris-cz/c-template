@@ -8,8 +8,9 @@ RUN apt-get update && apt-get -y upgrade
 
 # Compiler and toher related tools
 RUN apt-get -y install --no-install-recommends \
-  autoconf autoconf-archive automake libtool \
-  make pkg-config gcc gperf
+  make autoconf autoconf-archive automake libtool \
+  meson \
+  pkg-config gcc gperf
 
 # Test tools
 RUN apt-get -y install --no-install-recommends \
