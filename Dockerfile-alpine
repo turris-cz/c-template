@@ -35,7 +35,7 @@ FROM base as logc
 RUN apk add \
   git ca-certificates
 RUN \
-  git clone --branch "v0.3.0" "https://gitlab.nic.cz/turris/logc.git" && \
+  git clone --branch "v0.4.0" "https://gitlab.nic.cz/turris/logc.git" && \
   cd logc && \
   ./bootstrap && ./configure --prefix=/usr && make install && \
   cd .. && \
