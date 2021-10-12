@@ -47,6 +47,3 @@ RUN \
   ./bootstrap && ./configure --prefix=/usr && make install && \
   cd .. && \
   rm -rf logc-libs
-
-
-# vim: ft=dockerfile

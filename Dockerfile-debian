@@ -57,5 +57,3 @@ RUN \
   rm -rf logc-libs
 
 RUN apt-get clean
-
-# vim: ft=dockerfile
