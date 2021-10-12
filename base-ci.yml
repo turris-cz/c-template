@@ -110,7 +110,28 @@ valgrind:memcheck:alpine:
   image: "$CI_REGISTRY_IMAGE:alpine"
   needs: ["build:alpine"]
 
-  # Helgrind detects some issue in musl thus we skip it on musl
+valgrind:helgrind:debian:
+  extends: .test
+  variables:
+    VALGRIND: helgrind
+  image: "$CI_REGISTRY_IMAGE:debian"
+  needs: ["build:debian"]
+# Helgrind detects some issue in musl thus we skip it on musl
+
+.valgrind:drd:
+  extends: .test
+  variables:
+    VALGRIND: drd
+
+valgrind:drd:debian:
+  extends: .valgrind:drd
+  image: "$CI_REGISTRY_IMAGE:debian"
+  needs: ["build:debian"]
+
+valgrind:drd:alpine:
+  extends: .valgrind:drd
+  image: "$CI_REGISTRY_IMAGE:alpine"
+  needs: ["build:alpine"]
 
 .linter:
   stage: test
