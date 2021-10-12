@@ -81,7 +81,9 @@ dist:
     when: on_failure
     expire_in: 1 week
     paths:
-    - 'build/meson-logs/'
+      - 'build/meson-logs/'
+    reports:
+      junit: 'build/meson-logs/testlog.junit.xml'
 
 test:debian:
   extends: .test
