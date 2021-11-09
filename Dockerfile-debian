@@ -6,30 +6,30 @@ CMD [ "bash" ]
 
 RUN apt-get update && apt-get -y upgrade
 
-# Compiler and toher related tools
-RUN apt-get -y install --no-install-recommends \
+# Compiler and other related tools
+RUN apt-get update && apt-get -y install --no-install-recommends \
   make autoconf autoconf-archive automake libtool \
   meson \
   pkg-config gcc gperf
 
 # Test tools
-RUN apt-get -y install --no-install-recommends \
+RUN apt-get update && apt-get -y install --no-install-recommends \
   check \
   bats \
   valgrind
 # Linters
-RUN apt-get -y install --no-install-recommends \
+RUN apt-get update && apt-get -y install --no-install-recommends \
   cppcheck flawfinder
 # Code coverage
-RUN apt-get -y install --no-install-recommends \
+RUN apt-get update && apt-get -y install --no-install-recommends \
   lcov
 
 # Libraries
-RUN apt-get -y install --no-install-recommends \
+RUN apt-get update && apt-get -y install --no-install-recommends \
   libconfig-dev
 
 # Binaries required to build distribution archives
-RUN apt-get -y install --no-install-recommends \
+RUN apt-get update && apt-get -y install --no-install-recommends \
   zip xz-utils
 
 RUN apt-get clean
@@ -37,10 +37,8 @@ RUN apt-get clean
 
 FROM base as logc
 
-RUN apt-get update
-
 # Compile logc
-RUN apt-get -y install --no-install-recommends \
+RUN apt-get update && apt-get -y install --no-install-recommends \
   git ca-certificates
 RUN \
   git clone --branch "v0.4.0" "https://gitlab.nic.cz/turris/logc.git" && \
