@@ -1,0 +1,7 @@
+FROM registry.gitlab.com/gitlab-org/release-cli:latest
+
+RUN \
+  apk update \
+  apk add bash curl
+
+COPY ./release.sh /

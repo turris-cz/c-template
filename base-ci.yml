@@ -185,4 +185,4 @@ release:
     - apk update
     - apk add bash curl
   script:
-    - .gitlab-ci/release.sh
+    - /release.sh "$PROJECT_NAME"
