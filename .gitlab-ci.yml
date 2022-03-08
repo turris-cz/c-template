@@ -16,8 +16,6 @@ stages:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
     - docker pull $TAG || true
-    - docker build --pull --cache-from $TAG-base --tag $TAG-base --target base --file Dockerfile-$NAME .
-    - docker push $TAG-base
     - docker build --pull --cache-from $TAG --tag $TAG --file Dockerfile-$NAME .
     - docker push $TAG
 

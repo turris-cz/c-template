@@ -1,4 +1,4 @@
-FROM alpine:latest as base
+FROM alpine:latest
 
 ENV HOME /root
 CMD [ "bash" ]
@@ -29,8 +29,6 @@ RUN apk add \
 RUN apk add \
   gzip zip xz
 
-
-FROM base as logc
 
 # Compile logc
 RUN apk add \

@@ -1,5 +1,5 @@
 # Wee need unstable for now because of check version
-FROM debian:unstable as base
+FROM debian:unstable
 
 ENV HOME /root
 CMD [ "bash" ]
@@ -32,10 +32,6 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
 RUN apt-get update && apt-get -y install --no-install-recommends \
   zip xz-utils
 
-RUN apt-get clean
-
-
-FROM base as logc
 
 # Compile logc
 RUN apt-get update && apt-get -y install --no-install-recommends \
@@ -47,5 +43,6 @@ RUN \
   make install && \
   cd .. && \
   rm -rf logc
+
 
 RUN apt-get clean
