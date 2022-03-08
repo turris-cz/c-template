@@ -41,9 +41,3 @@ RUN \
   ./bootstrap && ./configure --prefix=/usr && make install && \
   cd .. && \
   rm -rf logc
-RUN \
-  git clone --branch "v0.1.0" "https://gitlab.nic.cz/turris/logc-libs.git" && \
-  cd logc-libs && \
-  ./bootstrap && ./configure --prefix=/usr && make install && \
-  cd .. && \
-  rm -rf logc-libs
