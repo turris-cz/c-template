@@ -66,9 +66,9 @@ dist:
   artifacts:
     expire_in: 1 month
     paths:
-      - $NAME-*.tar.gz
-      - $NAME-*.tar.xz
-      - $NAME-*.zip
+      - build/meson-dist/$NAME-*.tar.xz
+      - build/meson-dist/$NAME-*.tar.gz
+      - build/meson-dist/$NAME-*.zip
 
 ## Test stage ####################################################################
 .test:
